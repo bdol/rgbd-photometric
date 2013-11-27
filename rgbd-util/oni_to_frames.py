@@ -1,5 +1,6 @@
 from primesense import openni2
 import sys
+import numpy
 import cv2
 
 if len(sys.argv)<2:
@@ -25,16 +26,32 @@ depth_stream.start()
 color_stream.start()
 
 print "Saving frames..."
-nx = 640
-ny = 480
+
+rows = 240
+cols = 320
+
 for i in range(0, n_color_frames):
-    frame = color_stream.read_frame()
-    frame_data = frame.get_buffer_as_triplet()
+     frame = color_stream.read_frame()
+     frame_data = frame.get_buffer_as_triplet()
+     color = numpy.ndarray((rows, cols, 3), numpy.dtype('uint8'), frame_data)
+     cv2.imshow('test', color)
+     cv2.waitKey(1)
 print "Saved color frames."
+
+rows = 240
+cols = 320
+depth = numpy.zeros((rows, cols))
 
 for i in range(0, n_depth_frames):
     frame = depth_stream.read_frame()
     frame_data = frame.get_buffer_as_uint16()
+    print len(frame_data)
+    for j in range(rows):
+    	for k in range(cols):
+    		#print j*cols+k
+    		depth[j,k] = frame_data[j*cols+k]
+    cv2.imshow('test', depth/numpy.max(depth))
+    cv2.waitKey(1)
 print "Saved depth frames."
 
 
