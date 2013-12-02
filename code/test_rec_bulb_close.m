@@ -1,0 +1,1 @@
+M = get_frame_matrix('~/code/datasets/photometric/bulb_close/frames/rgb/', [40 20 120 160]);
