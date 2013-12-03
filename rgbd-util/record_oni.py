@@ -15,6 +15,7 @@ dev = openni2.Device.open_any()
 depth_stream = dev.create_depth_stream()
 color_stream = dev.create_color_stream()
 color_stream.camera.set_auto_exposure(False)
+color_stream.camera.set_auto_white_balance(False)
 dev.set_image_registration_mode(openni2.IMAGE_REGISTRATION_DEPTH_TO_COLOR)
 
 depth_stream.start()
