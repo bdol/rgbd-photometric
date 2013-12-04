@@ -98,7 +98,7 @@ def integrate_normals(normals, mask):
     return depth
 
 def make_M(image_filenames, roi):
-    gamma = 2.2
+    gamma =1.0/2.2
     _, _, width, height = roi
     M = numpy.zeros((len(image_filenames), width*height))
     for (i, image_filename) in enumerate(image_filenames):
@@ -205,7 +205,7 @@ def main():
         for j in range(width):
             valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
             if valid[i,j]:
-                out.write('v {0} {1} {2}\n'.format(j*0.5, -i*0.5,-1*(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
+                out.write('v {0} {1} {2}\n'.format(j, -i,-1*(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
                 indices[i,j] = count
                 count += 1
 
