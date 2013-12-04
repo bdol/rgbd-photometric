@@ -2,8 +2,8 @@ from primesense import openni2
 import sys
 import time
 
-if len(sys.argv)<4:
-    print "Usage: python record_oni.py <path of output .oni> <num frames> <delay (s)>"
+if len(sys.argv)<5:
+    print "Usage: python record_oni.py <path of output .oni> <num frames> <delay (s)> <resolution>"
     sys.exit(1)
 
 niRedistPath = "openni/Redist"
@@ -17,15 +17,29 @@ depth_stream = dev.create_depth_stream()
 color_stream = dev.create_color_stream()
 
 videoMode = color_stream.get_video_mode()
-videoMode.resolutionX = 1280
-videoMode.resolutionY = 1024
+if int(sys.argv[4])==1:
+    videoMode.resolutionX = 640
+    videoMode.resolutionY = 480
+elif int(sys.argv[4])==2:
+    videoMode.resolutionX = 1280
+    videoMode.resolutionY = 1024
+else:
+    videoMode.resolutionX = 320
+    videoMode.resolutionY = 240
 color_stream.set_video_mode(videoMode)
 color_stream.camera.set_auto_exposure(False)
 color_stream.camera.set_auto_white_balance(False)
 
 videoMode = depth_stream.get_video_mode()
-videoMode.resolutionX = 640
-videoMode.resolutionY = 480
+if int(sys.argv[4])==1:
+    videoMode.resolutionX = 640
+    videoMode.resolutionY = 480
+elif int(sys.argv[4])==2:
+    videoMode.resolutionX = 640
+    videoMode.resolutionY = 480
+else:
+    videoMode.resolutionX = 320
+    videoMode.resolutionY = 240
 depth_stream.set_video_mode(videoMode)
 
 dev.set_image_registration_mode(openni2.IMAGE_REGISTRATION_DEPTH_TO_COLOR)
