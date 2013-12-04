@@ -39,17 +39,17 @@ print "Saving frames..."
 rows = 240
 cols = 320
 
-#c = 0
-#for i in range(0, n_color_frames):
-     #frame = color_stream.read_frame()
-     #frame_data = frame.get_buffer_as_triplet()
-     #color = numpy.ndarray((rows, cols, 3), numpy.dtype('uint8'), frame_data)
-     #fName = os.path.join(rgbDir, "rgb_"+str(c).zfill(5)+".png")
-     #cv2.imwrite(fName, color)
-     #cv2.imshow('test', color)
-     #cv2.waitKey(1)
-     #c += 1
-#print "Saved color frames."
+c = 0
+for i in range(0, n_color_frames):
+     frame = color_stream.read_frame()
+     frame_data = frame.get_buffer_as_triplet()
+     color = numpy.ndarray((rows, cols, 3), numpy.dtype('uint8'), frame_data)
+     fName = os.path.join(rgbDir, "rgb_"+str(c).zfill(5)+".png")
+     cv2.imwrite(fName, color)
+     cv2.imshow('test', color)
+     cv2.waitKey(1)
+     c += 1
+print "Saved color frames."
 
 rows = 240
 cols = 320
