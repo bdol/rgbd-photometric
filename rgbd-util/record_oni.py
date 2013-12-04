@@ -11,11 +11,23 @@ openni2.initialize(niRedistPath)
 
 fileName = sys.argv[1]
 dev = openni2.Device.open_any()
+dev.set_depth_color_sync_enabled(True)
 
 depth_stream = dev.create_depth_stream()
 color_stream = dev.create_color_stream()
+
+videoMode = color_stream.get_video_mode()
+videoMode.resolutionX = 1280
+videoMode.resolutionY = 1024
+color_stream.set_video_mode(videoMode)
 color_stream.camera.set_auto_exposure(False)
 color_stream.camera.set_auto_white_balance(False)
+
+videoMode = depth_stream.get_video_mode()
+videoMode.resolutionX = 640
+videoMode.resolutionY = 480
+depth_stream.set_video_mode(videoMode)
+
 dev.set_image_registration_mode(openni2.IMAGE_REGISTRATION_DEPTH_TO_COLOR)
 
 depth_stream.start()
