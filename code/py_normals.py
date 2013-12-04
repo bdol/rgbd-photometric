@@ -2,7 +2,6 @@ import cv2
 import sys
 import numpy as np
 import scipy.io
-import os
 
 def depth_to_world(D):
     imh = D.shape[0]
@@ -61,22 +60,11 @@ def pc_normal(pcloud):
 
 def get_normals(pcloud):
     N = pc_normal(pcloud)
-    return N, (1.0 * (N != 0))[:,:,0]
+    return N, 0
 
-def main():   
-    im = cv2.imread(r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\out\depth\depth_00000.png', -1)
-    im[im>489] = 0
-    roi = [50, 20, 80, 160]
+im = cv2.imread('/Users/bdol/Dropbox/dframes/depth_00019.png', -1)
+im[im>489] = 0
 
-    im = im[roi[1]:roi[1]+roi[3],roi[0]:roi[0]+roi[2]]
+pcloud = depth_to_world(im)
+normals, valid = get_normals(pcloud)
 
-
-    pcloud = depth_to_world(im)
-    normals, valid = get_normals(pcloud)
-    print valid
-    cv2.imshow("Normals", normals)
-    cv2.imshow("valid", valid)
-    cv2.waitKey(0)
-
-if __name__ == '__main__':
-    main()
