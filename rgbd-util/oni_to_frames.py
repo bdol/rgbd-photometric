@@ -36,14 +36,14 @@ color_stream.start()
 
 print "Saving frames..."
 
-rows = 240
-cols = 320
+c_rows = color_stream.get_video_mode().resolutionY
+c_cols = color_stream.get_video_mode().resolutionX
 
 c = 0
 for i in range(0, n_color_frames):
      frame = color_stream.read_frame()
      frame_data = frame.get_buffer_as_triplet()
-     color = numpy.ndarray((rows, cols, 3), numpy.dtype('uint8'), frame_data)
+     color = numpy.ndarray((c_rows, c_cols, 3), numpy.dtype('uint8'), frame_data)
      fName = os.path.join(rgbDir, "rgb_"+str(c).zfill(5)+".png")
      cv2.imwrite(fName, color)
      cv2.imshow('test', color)
@@ -51,17 +51,18 @@ for i in range(0, n_color_frames):
      c += 1
 print "Saved color frames."
 
-rows = 240
-cols = 320
-depth = numpy.zeros((rows, cols))
+d_rows = depth_stream.get_video_mode().resolutionY
+d_cols = depth_stream.get_video_mode().resolutionX
+
+depth = numpy.zeros((d_rows, d_cols))
 
 c = 0
 for i in range(0, n_depth_frames):
     frame = depth_stream.read_frame()
     frame_data = frame.get_buffer_as_uint16()
-    for j in range(rows):
-        for k in range(cols):
-            depth[j,k] = frame_data[j*cols+k]
+    for j in range(d_rows):
+        for k in range(d_cols):
+            depth[j,k] = frame_data[j*d_cols+k]
 
     fName = os.path.join(depthDir, "depth_"+str(c).zfill(5)+".png")
     cv2.imwrite(fName, depth.astype('uint16'))
