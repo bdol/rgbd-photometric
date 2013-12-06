@@ -157,7 +157,7 @@ def main():
     depth_image_filenames = depth_image_filenames[0:10]
 
     im = cv2.imread(depth_image_filenames[0], -1)
-    im[im>489] = 0
+    im[im>420] = 0
     width = 80
     height = 160
     roi = [50, 20, width, height]
@@ -192,20 +192,21 @@ def main():
             idx = i*width+j
             normals_image[i, j, :] = N[:,idx]
 
-    cv2.imshow('normals', normals_image)
-    cv2.waitKey()
+    #cv2.imshow('normals', normals_image)
+    #cv2.waitKey()
     depth = integrate_normals(normals_image, numpy.ones((height, width)))
 
-    t = solve_bas_relief(pcloud[:,:,2], depth, valid)
+    t = solve_bas_relief(pcloud[:,:,2], depth, pcloud[:,:,2]>0)
 
     indices = -1*numpy.ones((height, width), numpy.int32)
     out = open('test.obj', 'w')
     count = 0
     for i in range(height):
         for j in range(width):
-            valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
+            #valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
             if valid[i,j]:
-                out.write('v {0} {1} {2}\n'.format(j, -i,-1*(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
+                #out.write('v {0} {1} {2}\n'.format(j, -i,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
+                out.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
                 indices[i,j] = count
                 count += 1
 
