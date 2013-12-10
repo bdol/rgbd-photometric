@@ -58,16 +58,37 @@ depth = numpy.zeros((d_rows, d_cols))
 
 c = 0
 for i in range(0, n_depth_frames):
+
     frame = depth_stream.read_frame()
     frame_data = frame.get_buffer_as_uint16()
+
+    points = []
     for j in range(d_rows):
         for k in range(d_cols):
             depth[j,k] = frame_data[j*d_cols+k]
+            if depth[j, k]>0 and depth[j, k]<400:
+                # Transform the data
+                z = float(depth[j, k])/1000
+                x = (float(k)-320)*z/570
+                y = (float(j)-240)*z/570
+                points.append([x, y, z])
 
     fName = os.path.join(depthDir, "depth_"+str(c).zfill(5)+".png")
     cv2.imwrite(fName, depth.astype('uint16'))
     cv2.imshow('test', depth/numpy.max(depth))
     cv2.waitKey(1)
+
+    ply = open(os.path.join(depthDir, "ply_"+str(c).zfill(5)+".ply"), "w")
+    ply.write("ply\n")
+    ply.write("format ascii 1.0\n")
+    ply.write("element vertex "+str(len(points))+"\n")
+    ply.write("property float x\n")
+    ply.write("property float y\n")
+    ply.write("property float z\n")
+    ply.write("end_header\n")
+    for j in range(0, len(points)):
+        ply.write(str(points[j][0])+" "+str(points[j][1])+" "+str(points[j][2])+"\n")
+    ply.close()
     c += 1
 print "Saved depth frames."
 
