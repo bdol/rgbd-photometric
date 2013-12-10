@@ -4,9 +4,16 @@ import sys
 import numpy
 import cv2
 
-if len(sys.argv)<3:
-    print "Usage: python oni_to_frames.py <path to .oni> <out_dir>"
+if len(sys.argv)<7:
+    print "Usage: python oni_to_frames.py <path to .oni> <out_dir> <roi x1> <roi y1> <roi x2> <roi y2>"
     sys.exit(1)
+
+x1 = int(sys.argv[3])
+y1 = int(sys.argv[4])
+x2 = int(sys.argv[5])
+y2 = int(sys.argv[6])
+nCols = x2-x1+1
+nRows = y2-y1+1
 
 outDir = os.path.abspath(sys.argv[2])
 rgbDir = os.path.join(outDir, "rgb")
@@ -66,12 +73,16 @@ for i in range(0, n_depth_frames):
     for j in range(d_rows):
         for k in range(d_cols):
             depth[j,k] = frame_data[j*d_cols+k]
-            if depth[j, k]>0 and depth[j, k]<400:
+            if k>=x1 and k<=x2 and j>=y1 and j<=y2:
                 # Transform the data
                 z = float(depth[j, k])/1000
                 x = (float(k)-320)*z/570
                 y = (float(j)-240)*z/570
-                points.append([x, y, z])
+                z = -z
+                valid = 0
+                if depth[j, k]>0 and depth[j, k]<360:
+                    valid = 1
+                points.append([x, y, z, valid])
 
     fName = os.path.join(depthDir, "depth_"+str(c).zfill(5)+".png")
     cv2.imwrite(fName, depth.astype('uint16'))
@@ -81,13 +92,31 @@ for i in range(0, n_depth_frames):
     ply = open(os.path.join(depthDir, "ply_"+str(c).zfill(5)+".ply"), "w")
     ply.write("ply\n")
     ply.write("format ascii 1.0\n")
+    ply.write("obj_info is_mesh 0\n")
+    ply.write("obj_info num_cols "+str(nCols)+"\n")
+    ply.write("obj_info num_rows "+str(nRows)+"\n")
     ply.write("element vertex "+str(len(points))+"\n")
     ply.write("property float x\n")
     ply.write("property float y\n")
     ply.write("property float z\n")
+    ply.write("property uchar diffuse_red\n")
+    ply.write("property uchar diffuse_green\n")
+    ply.write("property uchar diffuse_blue\n")
+    ply.write("property float intensity\n")
+    ply.write("element range_grid "+str(len(points))+"\n")
+    ply.write("property list uchar int vertex_indices\n")
     ply.write("end_header\n")
+
+    # Write data
     for j in range(0, len(points)):
-        ply.write(str(points[j][0])+" "+str(points[j][1])+" "+str(points[j][2])+"\n")
+        ply.write(str(points[j][0])+" "+str(points[j][1])+" "+str(points[j][2])+" 150 150 150 0.9\n")
+    # Write vertex list
+    for j in range(0, len(points)):
+        if points[j][3] == 1:
+            ply.write("1 "+str(j)+"\n")
+        else:
+            ply.write("0\n")
+
     ply.close()
     c += 1
 print "Saved depth frames."
@@ -99,3 +128,4 @@ color_stream.stop()
 openni2.unload()
 
 print "Done!"
+
