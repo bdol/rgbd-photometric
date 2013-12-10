@@ -31,7 +31,7 @@ def solve_for_A(N_ref, N):
     print numpy.linalg.norm(N_ref - numpy.dot(numpy.transpose(A_t),N))
     return numpy.transpose(A_t)
 
-def integrate_normals(normals, mask):
+def integrate_normals(normals, mask, ref_depth, psi):
     M, N, _ = normals.shape
     pixel_to_idx = -1*numpy.ones((M, N), dtype=numpy.int32)
 
@@ -44,8 +44,8 @@ def integrate_normals(normals, mask):
                 pixel_to_idx[i,j] = count
                 count += 1
 
-    A = scipy.sparse.dok_matrix((2*count, count), dtype=numpy.float32)
-    b = numpy.zeros(2*count)
+    A = scipy.sparse.dok_matrix((3*count, count), dtype=numpy.float32)
+    b = numpy.zeros(3*count)
 
     for i in range(M):
         for j in range(N):
@@ -53,6 +53,11 @@ def integrate_normals(normals, mask):
                 idx = pixel_to_idx[i, j];
                 row_idx1 = 2*idx;
                 row_idx2 = 2*idx+1;
+
+                # ref depth constraint
+                A[2*count + idx, idx] = psi
+                b[2*count + idx] = psi*ref_depth[i,j]
+                #continue
                 
                 nx = normals[i, j, 0];
                 ny = normals[i, j, 1];
@@ -87,14 +92,16 @@ def integrate_normals(normals, mask):
 
     A = scipy.sparse.csr_matrix(A)
     z, istop, itmax, r1norm = scipy.sparse.linalg.lsmr(A, b)[0:4]
+
     
     depth = numpy.zeros((M, N))
     for i in range(M):
         for j in range(N):
             idx = pixel_to_idx[i,j]
-            if idx > 0:
+            if idx >= 0:
                 depth[i, j] = z[idx]
 
+    print numpy.linalg.norm(ref_depth[mask] - depth[mask])
     return depth
 
 def make_M(image_filenames, roi):
@@ -168,7 +175,7 @@ def main():
     depth_image_filenames = depth_image_filenames[0:10]
 
     im = cv2.imread(depth_image_filenames[0], -1)
-    im[im>400] = 0
+    im[im>475] = 0
     width = 80
     height = 160
     roi = [50, 20, width, height]
@@ -206,9 +213,10 @@ def main():
 
     #cv2.imshow('normals', normals_image)
     #cv2.waitKey()
-    depth = integrate_normals(normals_image, numpy.ones((height, width)))
+    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 0.3)
 
     t = solve_bas_relief(pcloud[:,:,2], depth, pcloud[:,:,2]>0)
+    #t = [1, 1, 1, 1]
     #t = solve_bas_relief(pcloud[:,:,2], depth, valid)
 
     indices = -1*numpy.ones((height, width), numpy.int32)
@@ -218,10 +226,10 @@ def main():
     for i in range(height):
         for j in range(width):
             x, y = pcloud[i,j,0:2]
-            valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
+            #valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
             if valid[i,j]:
                 out.write('v {0} {1} {2}\n'.format(j, -i,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
-                out2.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
+                if pcloud[i,j,2] != 0: out2.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
                 #out.write('v {0} {1} {2}\n'.format(pcloud[i,j,0], pcloud[i,j,1],-pcloud[i,j,2]))
                 indices[i,j] = count
                 count += 1
