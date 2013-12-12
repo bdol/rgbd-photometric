@@ -58,9 +58,30 @@ def pc_normal(pcloud):
 
     return normals
 
+def crossprod_normals(pcloud):
+    imh = pcloud.shape[0]
+    imw = pcloud.shape[1]
+    normals = np.zeros((imh, imw, 3))
+
+    for i in range(0, imh):
+        for j in range(0, imw):
+            if i<imh-1 and j<imw-1 and pcloud[i, j, 2]>0:
+                u = np.array([pcloud[i+1, j, 0]-pcloud[i, j, 0], pcloud[i+1, j, 1]-pcloud[i, j, 1], pcloud[i+1, j, 2]-pcloud[i, j, 2]])
+                v = np.array([pcloud[i, j+1, 0]-pcloud[i, j, 0], pcloud[i, j+1, 1]-pcloud[i, j, 1], pcloud[i, j+1, 2]-pcloud[i, j, 2]])
+                cr = np.cross(v, u)
+                cr /= (np.linalg.norm(cr)+0.0001)
+                normals[i, j, :] = cr 
+
+    return normals
+
+
 
 def get_normals(pcloud):
     N = pc_normal(pcloud)
+    return N, (1.0 * (N != 0))[:,:,0]
+
+def get_normals_crossprod(pcloud):
+    N = crossprod_normals(pcloud)
     return N, (1.0 * (N != 0))[:,:,0]
 
 def main():   
