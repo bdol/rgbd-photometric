@@ -166,7 +166,7 @@ def fit_local_model(M, L, N):
 
 
 def main():
-    video_dir = r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\out'
+    video_dir = r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\out2'
     depth_dir = os.path.join(video_dir, 'depth')
     rgb_dir = os.path.join(video_dir, 'rgb')
 
@@ -175,10 +175,10 @@ def main():
     depth_image_filenames = depth_image_filenames[0:10]
 
     im = cv2.imread(depth_image_filenames[0], -1)
-    im[im>475] = 0
-    width = 80
-    height = 160
-    roi = [50, 20, width, height]
+    im[im>560] = 0
+    width = 150
+    height = 189
+    roi = [220, 112, width, height]
 
     im = apply_roi(im, roi)
 
@@ -186,24 +186,31 @@ def main():
     ref_normals, valid = py_normals.get_normals(pcloud)
     flat_ref_normals = flatten_normals(ref_normals)
 
-    #cv2.imshow("Normals", normals)
-    #cv2.imshow("valid", valid)
+    cv2.imshow("Normals", ref_normals)
+    cv2.imshow("valid", valid*numpy.ones(valid.shape))
     #cv2.waitKey(0)
 
     M = make_M(rgb_image_filenames, roi)
     L, N = solve_for_L_and_N(M,3)
     fit_local_model(M, L, N)
-    # normals_image = numpy.zeros((height, width, 3))
-    # for i in range(height):
-    #     for j in range(width):
-    #         idx = i*width+j
-    #         normals_image[i, j, :] = N[:,idx]
-
-    # cv2.imshow('normals', normals_image)
-    # cv2.waitKey()
-    A = solve_for_A(flat_ref_normals, N)
-
+    flat_valid = valid.reshape(-1)
+    A = solve_for_A(flat_ref_normals[:,flat_valid], N[:,flat_valid])
     N = numpy.dot(A,N)
+
+    for i in range(N.shape[1]):
+        N[:,i] /= (1e-5 + numpy.linalg.norm(N[:,i]))
+
+    normals_image = numpy.zeros((height, width, 3))
+    for i in range(height):
+        for j in range(width):
+            idx = i*width+j
+            normals_image[i, j, :] = N[:,idx]
+            normals_image[i, j, :] /= (1e-5 + numpy.linalg.norm(normals_image[i,j,:]))
+
+    cv2.imshow('normals', normals_image-ref_normals)
+    cv2.waitKey()
+
+   
 
     normals_image = numpy.zeros((height, width, 3))
     for i in range(height):
@@ -213,7 +220,7 @@ def main():
 
     #cv2.imshow('normals', normals_image)
     #cv2.waitKey()
-    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 0.3)
+    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 0.5)
 
     t = solve_bas_relief(pcloud[:,:,2], depth, pcloud[:,:,2]>0)
     #t = [1, 1, 1, 1]
@@ -226,7 +233,7 @@ def main():
     for i in range(height):
         for j in range(width):
             x, y = pcloud[i,j,0:2]
-            #valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.01
+            #valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.5
             if valid[i,j]:
                 out.write('v {0} {1} {2}\n'.format(j, -i,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
                 if pcloud[i,j,2] != 0: out2.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
