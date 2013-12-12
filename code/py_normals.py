@@ -8,7 +8,7 @@ def depth_to_world(D):
     imh = D.shape[0]
     imw = D.shape[1]
     center = [imh/2, imw/2]
-    constant = 525
+    constant = 535
 
     xgrid = np.ones((imh, 1)) * np.arange(0, imw) - center[1]
     ygrid = np.mat(np.arange(0, imh)).T * np.ones((1, imw)) - center[0]

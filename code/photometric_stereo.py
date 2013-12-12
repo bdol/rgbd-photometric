@@ -170,7 +170,7 @@ def fit_local_model(M, L, N):
 
 
 def main():
-    video_dir = r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\out2'
+    video_dir = r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\daniel'
     depth_dir = os.path.join(video_dir, 'depth')
     rgb_dir = os.path.join(video_dir, 'rgb')
 
@@ -180,23 +180,23 @@ def main():
 
     im = cv2.imread(depth_image_filenames[0], -1)
     im[im>560] = 0
-    width = 150
-    height = 189
-    roi = [220, 112, width, height]
+    width = 223
+    height = 307
+    roi = [185, 45, width, height]
 
     im = apply_roi(im, roi)
 
     pcloud = py_normals.depth_to_world(im)
-    ref_normals, valid = py_normals.get_normals(pcloud)
+    ref_normals, valid = py_normals.crossprod_normals(pcloud)
     flat_ref_normals = flatten_normals(ref_normals)
 
-    cv2.imshow("Normals", ref_normals)
-    cv2.imshow("valid", valid*numpy.ones(valid.shape))
+    #cv2.imshow("Normals", ref_normals)
+    #cv2.imshow("valid", valid*numpy.ones(valid.shape))
     #cv2.waitKey(0)
 
     M = make_M(rgb_image_filenames, roi)
     L, N = solve_for_L_and_N(M,3)
-    fit_local_model(M, L, N)
+    #fit_local_model(M, L, N)
     flat_valid = valid.reshape(-1)
     A = solve_for_A(flat_ref_normals[:,flat_valid], N[:,flat_valid])
     N = numpy.dot(A,N)
@@ -211,8 +211,8 @@ def main():
             normals_image[i, j, :] = N[:,idx]
             normals_image[i, j, :] /= (1e-5 + numpy.linalg.norm(normals_image[i,j,:]))
 
-    cv2.imshow('normals', normals_image-ref_normals)
-    cv2.waitKey()
+    #cv2.imshow('normals', normals_image-ref_normals)
+    #cv2.waitKey()
 
    
 
@@ -224,10 +224,10 @@ def main():
 
     #cv2.imshow('normals', normals_image)
     #cv2.waitKey()
-    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 1)
+    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 0.1)
 
     t = solve_bas_relief(pcloud[:,:,2], depth, pcloud[:,:,2]>0)
-    #t = [1, 1, 1, 1]
+    #t = [0, 0, 1, 0]
     #t = solve_bas_relief(pcloud[:,:,2], depth, valid)
 
     indices = -1*numpy.ones((height, width), numpy.int32)
@@ -239,8 +239,11 @@ def main():
             x, y = pcloud[i,j,0:2]
             valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.5
             if valid[i,j]:
-                out.write('v {0} {1} {2}\n'.format(j, -i,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
-                if pcloud[i,j,2] != 0: out2.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
+                x = (j + roi[0] - 640/2)*depth[i,j]/535
+                y = (i + roi[1] - 480/2)*depth[i,j]/535
+                out.write('v {0} {1} {2}\n'.format(x, -y,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
+                #if pcloud[i,j,2] != 0: 
+                out2.write('v {0} {1} {2}\n'.format(x, -y,-pcloud[i,j,2]))
                 #out.write('v {0} {1} {2}\n'.format(pcloud[i,j,0], pcloud[i,j,1],-pcloud[i,j,2]))
                 indices[i,j] = count
                 count += 1
@@ -256,8 +259,10 @@ def main():
                 if idx4 >= 0:
                     if idx2 >= 0:
                         out.write('f {0} {1} {2}\n'.format(idx4+1, idx1+1, idx2+1))
+                        out2.write('f {0} {1} {2}\n'.format(idx4+1, idx1+1, idx2+1))
                     if idx3 >= 0:
                         out.write('f {0} {1} {2}\n'.format(idx4+1, idx3+1, idx1+1))
+                        out2.write('f {0} {1} {2}\n'.format(idx4+1, idx1+1, idx2+1))
                 count += 1
 
 
