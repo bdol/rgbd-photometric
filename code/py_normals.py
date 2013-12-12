@@ -8,7 +8,7 @@ def depth_to_world(D):
     imh = D.shape[0]
     imw = D.shape[1]
     center = [imh/2, imw/2]
-    constant = 570.3
+    constant = 525
 
     xgrid = np.ones((imh, 1)) * np.arange(0, imw) - center[1]
     ygrid = np.mat(np.arange(0, imh)).T * np.ones((1, imw)) - center[0]
@@ -62,6 +62,7 @@ def crossprod_normals(pcloud):
     imh = pcloud.shape[0]
     imw = pcloud.shape[1]
     normals = np.zeros((imh, imw, 3))
+    valid = np.zeros((imh,imw), np.bool)
 
     for i in range(0, imh):
         for j in range(0, imw):
@@ -71,18 +72,16 @@ def crossprod_normals(pcloud):
                 cr = np.cross(v, u)
                 cr /= (np.linalg.norm(cr)+0.0001)
                 normals[i, j, :] = cr 
+                valid[i,j] = True
 
-    return normals
+    return (normals, valid)
 
 
 
 def get_normals(pcloud):
     N = pc_normal(pcloud)
-    return N, (1.0 * (N != 0))[:,:,0]
+    return N, (N != 0)[:,:,0] > 0
 
-def get_normals_crossprod(pcloud):
-    N = crossprod_normals(pcloud)
-    return N, (1.0 * (N != 0))[:,:,0]
 
 def main():   
     im = cv2.imread(r'C:\Projects\GitHub\rgbd-photometric\rgbd-util\out\depth\depth_00000.png', -1)
