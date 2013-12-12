@@ -31,10 +31,13 @@ def solve_for_A(N_ref, N):
     print numpy.linalg.norm(N_ref - numpy.dot(numpy.transpose(A_t),N))
     return numpy.transpose(A_t)
 
+import copy
+
 def integrate_normals(normals, mask, ref_depth, psi):
     M, N, _ = normals.shape
     pixel_to_idx = -1*numpy.ones((M, N), dtype=numpy.int32)
-
+    depth_mask = copy.deepcopy(mask)
+    mask[:,:] = True
     # Create a mapping between pixel coordinates and indices when solving for
     # the depth map
     count = 0
@@ -55,8 +58,9 @@ def integrate_normals(normals, mask, ref_depth, psi):
                 row_idx2 = 2*idx+1;
 
                 # ref depth constraint
-                A[2*count + idx, idx] = psi
-                b[2*count + idx] = psi*ref_depth[i,j]
+                if depth_mask[i,j]:
+                    A[2*count + idx, idx] = psi
+                    b[2*count + idx] = psi*ref_depth[i,j]
                 #continue
                 
                 nx = normals[i, j, 0];
@@ -220,7 +224,7 @@ def main():
 
     #cv2.imshow('normals', normals_image)
     #cv2.waitKey()
-    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 0.5)
+    depth = integrate_normals(normals_image, pcloud[:,:,2]>0, pcloud[:,:,2], 1)
 
     t = solve_bas_relief(pcloud[:,:,2], depth, pcloud[:,:,2]>0)
     #t = [1, 1, 1, 1]
@@ -233,7 +237,7 @@ def main():
     for i in range(height):
         for j in range(width):
             x, y = pcloud[i,j,0:2]
-            #valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.5
+            valid[i,j] = numpy.linalg.norm(normals_image[i,j,:]) > 0.5
             if valid[i,j]:
                 out.write('v {0} {1} {2}\n'.format(j, -i,-(t[0]*j + t[1]*i + t[2]*depth[i,j] + t[3])))
                 if pcloud[i,j,2] != 0: out2.write('v {0} {1} {2}\n'.format(j, -i,-pcloud[i,j,2]))
